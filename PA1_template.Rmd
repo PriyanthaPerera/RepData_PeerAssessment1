@@ -1,25 +1,322 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title:"PA1_template"
+output:html_document
 ---
+Course: Reproducible Research PA1_template
+Author: Priyantha Perera
+Date: August 16 2015
+
+```{r}
+setwd("C:/Users/Priyantha/Coursera/Reproducible Research/week2")
+
+library(data.table)
+library(stats)
+library(dplyr)
+
+```
+
+```{r}
+data <- read.csv("activity.csv", stringsAsFactors=FALSE)
+head(data)
+dim(data)
+str(data)
+unique(data$date)
+
+datanaomit <- na.omit(data)
+dim(datanaomit)
+head(datanaomit)
+dim(datanaomit)
+x <- datanaomit[,2]
+class(x)
+unique(x)
+datetime <- strptime(x, format="%m/%d/%Y", tz="EST")
+
+head(datetime)
+
+datanaomit2 <-cbind(datanaomit,datetime)
+names(datanaomit2)
+A<-unique(datetime)
+
+```
+
+Total number of steps taken per day calculation
+ 
+```{r}
+tmp <-NULL
+
+for (i in 1:length(A)){
+
+  stepsum <- sum(subset(datanaomit,datanaomit2$datetime==A[i])[,1])
+
+  if (is.null(tmp)) tmp<-stepsum else tmp<-c(tmp,stepsum)
+
+}
 
 
-## Loading and preprocessing the data
+
+steps <- as.data.frame(tmp)
+steps <- data.frame(A,steps)
+names(steps)<- c("date", "steps")
+steps
+```
+Histogram of total number of steps taken each day
+```{r}
+hist(tmp, breaks = 20)
+```
+
+Computing the step means
+
+```{r}
+tmpcount <-NULL
+
+for (i in 1:length(A)){
+
+  stepcount <- length(subset(datanaomit,datanaomit2$datetime==A[i])[,1])
+
+  if (is.null(tmpcount)) tmpcount<-stepcount else tmpcount<-c(tmpcount,stepcount)
+
+}
+
+
+stepmean <- tmp/stepcount
+
+plot(stepmean)
+
+```
+
+Median calculation
+
+```{r}
+tmpmed <-NULL
+for (i in 1:length(A)){
+
+  stepmed <- median(subset(datanaomit,datanaomit2$datetime==A[i])[,1])
+
+  if (is.null(tmpmed)) tmpmed<-stepmed else tmpmed<-c(tmpmed,stepmed)
+
+}
+
+tmpmed
+
+```
+
+Time series plot of 5 -minute interval avg # of steps taken across all days
+
+```{r}
+
+index <- rep(1:stepcount[1],length(A))
+indexeddata <- data.frame(index,datanaomit)
+head(indexeddata)
+
+avgstepsin5mtinterval <-NULL
+
+for (i in 1:stepcount[1]){
+
+                tmpts <- sum(subset(indexeddata[,2],indexeddata$index==i))/length(unique(x))
+
+
+  if (is.null(avgstepsin5mtinterval)) avgstepsin5mtinterval<-tmpts else avgstepsin5mtinterval<-c(avgstepsin5mtinterval, tmpts)
+
+
+}
+
+plot(avgstepsin5mtinterval)
+
+```
+
+Finding the maximum average and which 5 minute interval it occurs
+
+```{r}
+maxsteps <- max(avgstepsin5mtinterval)
+maxsteps
+rowindexmax <- match(maxsteps, avgstepsin5mtinterval)
+
+```
+
+The maximum of the daily average number of steps in 5 minute intervals occur in the interval:  
+
+```{r}
+rowindexmax
+
+```
+
+Missing value handling
+We are going to substitute missing values with the average number of steps in the daily 5 minute intervals averaged over all days.
+
+Here is the code and results of total numbr of missing values
+
+```{r}
+(dim(data)-dim(datanaomit))[1]
+```
+
+This is to visually observe what the missing value data looks like
+
+```{r}
+datana <-data[is.na(data[,1]),]
+
+dim(datana)
+names(datana)
+unique(datana$date)
+View(datana)
+
+```
+
+By inspection of datana we observe that there are 8 different days with "NA"s. 
+
+```{r}
+(dim(datana)/288)[1]
+```
+
+This implies that all 8 days had all the observations missing.
+We will replicate "tmpts", the average number of steps  in 5 minute interval "missingdays" = 8 times.
+
+```{r}
+missingdays<-dim(datana)[1]/288
+
+missingvaluefill <- rep(avgstepsin5mtinterval, missingdays)
+
+```
+
+Now replace the "steps" column of datana by the "missingvaluefill" values
+
+```{r}
+datana[,1] <- missingvaluefill
+head(datana)
+head(datanaomit)
+names(datana)
+names(datanaomit)
+class(datana)
+class(datanaomit)
+
+
+datana[,1] <- missingvaluefill
+head(datana)
+head(datana)
+names(datana)
+class(datana)
+
+datanafilled <-rbind(datanaomit,datana)
+head(datanafilled)
+
+y <- datanafilled[,2]
+class(y)
+unique(y)
+
+datetimeall <- strptime(y, format="%m/%d/%Y", tz="EST")
+
+head(datetimeall)
+
+
+datanafilled2 <-cbind(datanafilled,datetimeall)
+names(datanafilled2)
+B<-unique(datetimeall)
+length(B)
+
+```
+
+Total number of steps taken per day calculation with na filled data
+
+```{r}
+
+tmpnafilled <-NULL
+
+
+for (i in 1:length(B)){
+
+  stepsum2 <- sum(subset(datanafilled,datanafilled2$datetimeall==B[i])[,1])
+
+  if (is.null(tmpnafilled)) tmpnafilled<-stepsum else tmpnafilled<-c(tmpnafilled,stepsum2)
+
+}
 
 
 
-## What is mean total number of steps taken per day?
+stepsall <- data.frame(B,tmpnafilled)
+names(stepsall)<- c("date", "steps")
+stepsall
+```
+
+
+Histogram of total number of steps taken each day
+
+```{r}
+hist(tmp, breaks = 20)
+
+```
+
+Computing the daily mean of nafilleddata
+
+```{r}
+tmpall <-NULL
+
+for (i in 1:length(B)){
+  
+  stepsum <- sum(subset(datanafilled,datanafilled2$datetimeall==B[i])[,1])
+  
+  if (is.null(tmpall)) tmpall<-stepsum else tmpall<-c(tmpall,stepsum)
+  
+}
 
 
 
-## What is the average daily activity pattern?
+stepsall <- as.data.frame(tmpall)
+stepsall <- data.frame(B,tmpall)
+names(stepsall)<- c("date", "steps")
+```
+Count
+```{r}
+tmpnafilledcount <-NULL
+dim(datanafilled)
+names(datanafilled)
+
+for (i in 1:length(B)){
+  
+  stepcount <- length(subset(datanafilled,datanafilled2$datetimeall==B[i])[,1])
+  
+  if (is.null(tmpcount)) tmpcount<-stepcount else tmpcount<-c(tmpcount,stepcount)
+  
+}
+
+```
+Calculating the mean and plotting
+```{r}
+
+stepmeanall <- tmpall/stepcount
 
 
+plot(stepmeanall)
 
-## Imputing missing values
+```
+
+Median calculation 
+```{r}
+tmpmedall <-NULL
+for (i in 1:length(B)){
+  
+  stepmedall <- median(subset(datanafilled,datanafilled2$datetimeall==B[i])[,1])
+  
+  if (is.null(tmpmedall)) tmpmedall<-stepmedall else tmpmedall<-c(tmpmedall,stepmedall)
+  
+}
+
+tmpmedall
+
+```
+
+Note: I have not plotted a time series plot, hence the na filled 8 days appear at the end of the plot.
 
 
+Note That the median of the original data remain at 0, while all the na filled days have the same non zero median.
 
-## Are there differences in activity patterns between weekdays and weekends?
+Remarks:
+My method of filling in the NA's is not satisfactory. It does not convey any new information regarding the data set. Perhaps randomly assigning the 5 minute interrval values by matching week days might give a better overall picture of the data
+
+Sorry I was unable to complete the weekday weeekend part 
+
+```{r}
+weekdaysall <- weekdays(datanafilled[,2])
+head(weekdaysall)
+
+```
+
+
